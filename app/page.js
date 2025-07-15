@@ -34,16 +34,19 @@ export default function HeartMinesweeper() {
 
   const handleClick = (r, c) => {
     const key = `${r}-${c}`;
-    if (revealed[key]) return;
+    if (revealed[key]) return; // ignore already revealed
 
     if (clickedCount < 4) {
+      // Show numbers 1,3,1,4 in order on first 4 clicks
       setRevealed((prev) => ({
         ...prev,
         [key]: NUMBERS_SEQUENCE[clickedCount],
       }));
       setClickedCount(clickedCount + 1);
     } else if (clickedCount === 4) {
-      // Try to offset so clicked cell lands on one of the heart outline points
+      // On 5th click, reveal heart bombs alongside existing numbers
+
+      // Find offset to center heart so clicked cell is on outline
       let bestOffset = null;
 
       for (const [dr, dc] of HEART_OUTLINE) {
@@ -68,14 +71,17 @@ export default function HeartMinesweeper() {
       }
 
       const [offsetR, offsetC] = bestOffset;
-      const newRevealed = {};
-      for (const [dr, dc] of HEART_OUTLINE) {
-        const rr = offsetR + dr;
-        const cc = offsetC + dc;
-        newRevealed[`${rr}-${cc}`] = "X";
-      }
 
-      setRevealed(newRevealed);
+      setRevealed((prev) => {
+        const newRevealed = { ...prev };
+        for (const [dr, dc] of HEART_OUTLINE) {
+          const rr = offsetR + dr;
+          const cc = offsetC + dc;
+          newRevealed[`${rr}-${cc}`] = "💣";
+        }
+        return newRevealed;
+      });
+
       setClickedHeartCell(`${r}-${c}`);
       setHeartShown(true);
       setClickedCount(clickedCount + 1);
@@ -119,6 +125,7 @@ export default function HeartMinesweeper() {
                   justifyContent: "center",
                   border: "1px solid #555",
                   cursor: val ? "default" : "pointer",
+                  userSelect: "none",
                 }}
               >
                 {val}
