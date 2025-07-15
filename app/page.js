@@ -5,29 +5,32 @@ import React, { useState } from "react";
 const GRID_SIZE = 16;
 const NUMBERS_SEQUENCE = [1, 3, 1, 4];
 
-// A visually symmetric heart relative to (0,0), centered on 5th click
-const HEART_MASK = [
-  [-3, -1],
-  [-3, 1],
+const HEART_OUTLINE = [
+  [-7, -2],
+  [-7, 2],
+  [-6, -3],
+  [-6, -1],
+  [-6, 1],
+  [-6, 3],
+  [-5, -4],
+  [-5, 0],
+  [-5, 4],
+  [-4, -4],
+  [-4, 4],
+  [-3, -3],
+  [-3, 3],
   [-2, -2],
-  [-2, 0],
   [-2, 2],
-  [-1, -3],
-  [-1, 3],
-  [0, -3],
-  [0, 3],
-  [1, -2],
-  [1, 2],
-  [2, -1],
-  [2, 1],
-  [3, 0],
+  [-1, -1],
+  [-1, 1],
+  [0, 0],
 ];
 
-export default function Home() {
+export default function HeartMinesweeper() {
   const [clickedCount, setClickedCount] = useState(0);
   const [revealed, setRevealed] = useState({});
-  const [heartShown, setHeartShown] = useState(false);
   const [clickedHeartCell, setClickedHeartCell] = useState(null);
+  const [heartShown, setHeartShown] = useState(false);
 
   const handleClick = (r, c) => {
     const key = `${r}-${c}`;
@@ -40,17 +43,37 @@ export default function Home() {
       }));
       setClickedCount(clickedCount + 1);
     } else if (clickedCount === 4) {
-      // Show heart shape centered on (r, c)
-      const newRevealed = {};
-      HEART_MASK.forEach(([dr, dc]) => {
-        const nr = r + dr;
-        const nc = c + dc;
-        if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
-          newRevealed[`${nr}-${nc}`] = "X";
+      // Try to offset so clicked cell lands on one of the heart outline points
+      let bestOffset = null;
+
+      for (const [dr, dc] of HEART_OUTLINE) {
+        const offsetRow = r - dr;
+        const offsetCol = c - dc;
+
+        const inBounds = HEART_OUTLINE.every(([hr, hc]) => {
+          const rr = offsetRow + hr;
+          const cc = offsetCol + hc;
+          return rr >= 0 && rr < GRID_SIZE && cc >= 0 && cc < GRID_SIZE;
+        });
+
+        if (inBounds) {
+          bestOffset = [offsetRow, offsetCol];
+          break;
         }
-      });
-      // Also mark the clicked center cell
-      newRevealed[`${r}-${c}`] = "X";
+      }
+
+      if (!bestOffset) {
+        alert("Too close to the edge for a heart to appear!");
+        return;
+      }
+
+      const [offsetR, offsetC] = bestOffset;
+      const newRevealed = {};
+      for (const [dr, dc] of HEART_OUTLINE) {
+        const rr = offsetR + dr;
+        const cc = offsetC + dc;
+        newRevealed[`${rr}-${cc}`] = "X";
+      }
 
       setRevealed(newRevealed);
       setClickedHeartCell(`${r}-${c}`);
@@ -104,11 +127,6 @@ export default function Home() {
           })
         )}
       </div>
-      <p style={{ marginTop: 20 }}>
-        {heartShown
-          ? "💥 You clicked a bomb and revealed a heart!"
-          : `Click count: ${clickedCount} / 5`}
-      </p>
     </div>
   );
 }
